@@ -1,0 +1,182 @@
+
+version: '3.6'
+services:
+  consul:
+    image: "devsadds/consul:1.8.3"
+    hostname: consul
+    volumes:
+      - "/docker-compose/SWARM/pxc8/configs/consul:/consul/config"
+    ports:
+      - target: 8500
+        published: 8500
+        protocol: tcp
+        mode: host
+    networks:
+      pxc8-net:
+        aliases:
+          - pxc.service.consul
+    command: "consul agent -config-file /consul/config/config.json"
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 15s
+        max_attempts: 13
+        window: 18s
+      update_config:
+        parallelism: 1
+        delay: 20s
+        failure_action: continue
+        monitor: 60s
+        max_failure_ratio: 0.3
+      placement:
+        constraints: [ node.labels.consul  == true ]
+
+  pxc1:
+    image: "devsadds/pxc:8.0.19-10.1-consul-1.8.3-focal-v1.1.0"
+    environment:
+      CLUSTER_NAME: "percona"
+      MYSQL_ROOT_PASSWORD: "root32456"
+      MYSQL_PROXY_USER: "mysqlproxyuser"
+      MYSQL_PROXY_PASSWORD: "mysqlproxy32456"
+      PXC_SERVICE: "pxc.service.consul"
+      DISCOVERY_SERVICE: "consul"
+      DATADIR: "/var/lib/mysql"
+      MONITOR_PASSWORD: "mys3232323323"
+      XTRABACKUP_PASSWORD: "mys3232323323"
+    volumes:
+      - "pxc_8_1:/var/lib/mysql"
+    networks:
+      pxc8-net:
+        ipv4_address: 10.23.0.12
+        aliases:
+          - mysql1
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 15s
+        max_attempts: 23
+        window: 180s
+      update_config:
+        parallelism: 1
+        delay: 20s
+        failure_action: continue
+        monitor: 60s
+        max_failure_ratio: 0.3
+      placement:
+        constraints: [ node.labels.pxc  == true ]
+  pxc2:
+    image: "devsadds/pxc:8.0.19-10.1-consul-1.8.3-focal-v1.1.0"
+    environment:
+      CLUSTER_NAME: "percona"
+      MYSQL_ROOT_PASSWORD: "root32456"
+      MYSQL_PROXY_USER: "mysqlproxyuser"
+      MYSQL_PROXY_PASSWORD: "mysqlproxy32456"
+      PXC_SERVICE: "pxc.service.consul"
+      DISCOVERY_SERVICE: "consul"
+      DATADIR: "/var/lib/mysql"
+      MONITOR_PASSWORD: "mys3232323323"
+      XTRABACKUP_PASSWORD: "mys3232323323"
+    volumes:
+      - "pxc_8_2:/var/lib/mysql"
+    networks:
+      pxc8-net:
+        ipv4_address: 10.23.0.11
+        aliases:
+          - mysql2
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 15s
+        max_attempts: 23
+        window: 180s
+      update_config:
+        parallelism: 1
+        delay: 20s
+        failure_action: continue
+        monitor: 60s
+        max_failure_ratio: 0.3
+      placement:
+        constraints: [ node.labels.pxc  == true ]
+  pxc3:
+    image: "devsadds/pxc:8.0.19-10.1-consul-1.8.3-focal-v1.1.0"
+    environment:
+      CLUSTER_NAME: "percona"
+      MYSQL_ROOT_PASSWORD: "root32456"
+      MYSQL_PROXY_USER: "mysqlproxyuser"
+      MYSQL_PROXY_PASSWORD: "mysqlproxy32456"
+      PXC_SERVICE: "pxc.service.consul"
+      DISCOVERY_SERVICE: "consul"
+      DATADIR: "/var/lib/mysql"
+      MONITOR_PASSWORD: "mys3232323323"
+      XTRABACKUP_PASSWORD: "mys3232323323"
+    volumes:
+      - "pxc_8_3:/var/lib/mysql"
+    networks:
+      pxc8-net:
+        ipv4_address: 10.23.0.10
+        aliases:
+          - mysql3
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 15s
+        max_attempts: 23
+        window: 180s
+      update_config:
+        parallelism: 1
+        delay: 20s
+        failure_action: continue
+        monitor: 60s
+        max_failure_ratio: 0.3
+      placement:
+        constraints: [ node.labels.pxc  == true ]
+  haproxy:
+    image: haproxy:alpine
+    container_name: haproxy
+    restart: always
+    depends_on:
+      - dockergen
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./configs/haproxy:/usr/local/etc/haproxy
+    networks:
+      - outside
+      - pxc8-net
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 23
+        window: 180s
+      update_config:
+        parallelism: 1
+        delay: 20s
+        failure_action: continue
+        monitor: 60s
+        max_failure_ratio: 0.3
+      placement:
+        constraints: [ node.labels.consul  == true ]
+volumes:
+  pxc_8_1:
+  pxc_8_2:
+  pxc_8_3:
+networks:
+  outside:
+  pxc8-net:
+    driver: overlay
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.23.0.0/24
+
