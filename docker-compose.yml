@@ -67,7 +67,9 @@ services:
         monitor: 60s
         max_failure_ratio: 0.3
       placement:
-        constraints: [ node.labels.pxc  == true ]
+        constraints:
+          - node.labels.pxc  == true
+          - node.hostname == node2
   pxc2:
     image: "devsadds/pxc:8.0.19-10.1-consul-1.8.3-focal-v1.1.0"
     environment:
@@ -102,7 +104,10 @@ services:
         monitor: 60s
         max_failure_ratio: 0.3
       placement:
-        constraints: [ node.labels.pxc  == true ]
+        constraints:
+          - node.labels.pxc  == true
+          - node.hostname == node3
+        
   pxc3:
     image: "devsadds/pxc:8.0.19-10.1-consul-1.8.3-focal-v1.1.0"
     environment:
@@ -137,7 +142,9 @@ services:
         monitor: 60s
         max_failure_ratio: 0.3
       placement:
-        constraints: [ node.labels.pxc  == true ]
+        constraints:
+          - node.labels.pxc  == true
+          - node.hostname == node4
   haproxy:
     image: haproxy:alpine
     container_name: haproxy
